@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2021 René de Hesselle <dehesselle@web.de>
+#
+# SPDX-License-Identifier: MIT
+
+name: build
+on:
+  push:   # do not run when pushing tags
+    branches:
+      - '*'
+
+jobs:
+
+  build:
+    runs-on: windows-2019
+    steps:
+
+    - name: checkout repository
+      uses: actions/checkout@v2
+
+    - name: install msbuild
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: build keycastow
+      run: msbuild /p:platform=win32 /p:Configuration=Release
+
+    - name: upload keycastow
+      uses: actions/upload-artifact@v2
+      with:
+        name: keycastow_release
+        path: Release/keycastow.exe
+
