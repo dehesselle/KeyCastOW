@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2021 René de Hesselle <dehesselle@web.de>
+#
+# SPDX-License-Identifier: MIT
+
+name: release
+on:
+  push:   # only run for tags
+    tags:
+      - 'v*'
+
+jobs:
+
+  build:
+    runs-on: windows-2019
+    steps:
+
+    - name: checkout repository
+      uses: actions/checkout@v2
+
+    - name: install msbuild
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: build keycastow
+      run: msbuild /p:platform=win32 /p:Configuration=Release
+
+    - name: upload keycastow
+      uses: actions/upload-artifact@v2
+      with:
+        name: keycastow_release
+        path: Release/keycastow.exe
+
+  #-----------------------------------------------------------------------------
+
+  create_release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+      - name: download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: keycastow_release
+
+      - name: create release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: KeyCastOW ${{ github.ref }}
+          draft: true
+          prerelease: false
+
+      - name: upload artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: keycastow.exe
+          asset_name: keycastow.exe
+          asset_content_type: application/octet-stream
